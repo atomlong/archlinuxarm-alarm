@@ -45,4 +45,5 @@ execute 'Building packages' build_package
 execute "Generating package signature" create_package_signature
 execute "Deploying artifacts" deploy_artifacts
 done
+create_mail_message
 success 'All packages built successfully'

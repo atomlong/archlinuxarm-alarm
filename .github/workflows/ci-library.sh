@@ -285,7 +285,11 @@ runuser -u alarm -- makepkg --noconfirm --skippgpcheck --nocheck --syncdeps --rm
 (ls *.pkg.tar.xz &>/dev/null) && {
 mkdir -pv ${ARTIFACTS_PATH}/${PACMAN_REPO}
 mv -vf *.pkg.tar.xz ${ARTIFACTS_PATH}/${PACMAN_REPO}
+true
+} || {
+export FILED_PKGS=(${FILED_PKGS[@]} ${package})
 }
+
 popd
 }
 
@@ -297,7 +301,6 @@ local old_pkgs pkg file
 (ls ${ARTIFACTS_PATH}/${PACMAN_REPO}/*.pkg.tar.xz &>/dev/null) || { echo "Skiped, no file to deploy"; return 0; }
 pushd ${ARTIFACTS_PATH}/${PACMAN_REPO}
 export PKG_FILES=(${PKG_FILES[@]} $(ls *.pkg.tar.xz))
-echo ::set-output name=pkgfile0::${PKG_FILES[@]}
 for file in ${PACMAN_REPO}.{db,files}{,.tar.xz}{,.old}; do
 rclone copy ${DEPLOY_PATH}/${PACMAN_REPO}/${file} ${PWD} 2>/dev/null || true
 done
@@ -310,6 +313,34 @@ done
 done
 rclone move ${ARTIFACTS_PATH}/${PACMAN_REPO} ${DEPLOY_PATH}/${PACMAN_REPO} --copy-links
 _record_package_hash "${package}"
+}
+
+# create mail message
+create_mail_message()
+{
+local message item
+
+[ -n "${PKG_FILES}" ] && {
+message="<p>Successfully created the following package archive.</p>"
+for item in ${PKG_FILES[@]}; do
+message=${message}"<p><font color=\"green\">${item}</font></p>"
+done
+}
+
+[ -n "${FILED_PKGS}" ] && {
+message=${message}"<p>Failed to build following packages. </p>"
+for item in ${FILED_PKGS[@]}; do
+message=${message}"<p><font color=\"red\">${item}</font></p>"
+done
+}
+
+[ -n "${message}" ] && {
+message=${message}"<p>Architecture: ${PACMAN_ARCH}</p>"
+message=${message}"<p>Build Number: ${CI_BUILD_NUMBER}</p>"
+echo ::set-output name=message::${message}
+}
+
+return 0
 }
 
 # Status functions

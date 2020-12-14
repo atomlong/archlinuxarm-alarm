@@ -57,16 +57,15 @@ jobs:
           exit 0
     - name: Send mail
       uses: atomlong/send-mail-action@v2
-      if: ${{ steps.runcmd.outputs.pkgfile0 != '' }}
+      if: ${{ steps.runcmd.outputs.message != '' }}
       with:
         server_address: ${{secrets.MAIL_HOST}}
         server_port: ${{secrets.MAIL_PORT}}
         username: ${{secrets.MAIL_USERNAME}}
         password: ${{secrets.MAIL_PASSWORD}}
-        subject: Github Actions job of ${{github.repository}} result
+        subject: ${{github.repository}} Github Action result
         body: |
-          <p>Successfully created the following package archive.</p>
-          <p>Package: ${{ steps.runcmd.outputs.pkgfile0 }}</p>
+          ${{ steps.runcmd.outputs.message }}
         to: ${{secrets.MAIL_TO}}
         from: Github
         content_type: text/html
