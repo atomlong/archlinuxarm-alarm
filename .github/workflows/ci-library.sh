@@ -260,6 +260,7 @@ build_package()
 local depends makedepends arch buildarch
 [ -n "${ARTIFACTS_PATH}" ] || { echo "You must set ARTIFACTS_PATH firstly."; return 1; }
 _package_info "${package}" depends{,_${PACMAN_ARCH}} makedepends{,_${PACMAN_ARCH}} arch buildarch
+[ "${arch}" == "any" ] || {
 [ -n "${buildarch}" ] && {
 [ "$((buildarch & 1<<0))" == "$((1<<0))" ] && arch=(${arch[@]} 'i686' 'x86_64' 'arm' 'armv6h' 'armv7h' 'aarch64')
 [ "$((buildarch & 1<<1))" == "$((1<<1))" ] && arch=(${arch[@]} 'arm')
@@ -270,8 +271,10 @@ true
 } || {
 arch=(${arch[@]} "${PACMAN_ARCH}")
 }
+}
 arch=($(tr ' ' '\n' <<< ${arch[@]} | sort -u))
-grep -Pq "\b${PACMAN_ARCH}\b" <<< ${arch[@]} || { echo "The package will not build for architecture '${PACMAN_ARCH}'"; return 0; }
+
+[ "${arch}" == "any" ] || grep -Pq "\b${PACMAN_ARCH}\b" <<< ${arch[@]} || { echo "The package will not build for architecture '${PACMAN_ARCH}'"; return 0; }
 [ "$(_last_package_hash ${package})" == "$(_now_package_hash ${package})" ] && { echo "The package '${package}' has beed built, skip."; return 0; }
 
 pushd "${package}"
